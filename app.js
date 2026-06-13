@@ -6,10 +6,6 @@ const Listing = require("./models/listing");
 const path = require("path");
 const methodOverride = require("method-override");
 const ejsmate = require("ejs-mate");
-
-
-
-
 app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, 'public')));
 main().then(() => {
