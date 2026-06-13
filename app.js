@@ -6,6 +6,9 @@ const Listing = require("./models/listing");
 const path = require("path");
 const methodOverride = require("method-override");
 const ejsmate = require("ejs-mate");
+const wrapAsync = require("./utils/wrapAsync.js");
+
+
 app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, 'public')));
 main().then(() => {
@@ -24,9 +27,6 @@ app.get("/", (req, res) => {
     res.send("hi i am root");
 });
 app.engine("ejs", ejsmate);
-
-
-
 // app.get("/testListing", async (req, res) => {
 //     let sampleListing = new Listing({
 //         title: "my new villa",
@@ -42,7 +42,7 @@ app.engine("ejs", ejsmate);
 app.get("/listings", async (req, res) => {
 
     const allListings = await Listing.find({});
-    console.log(allListings);
+    // console.log(allListings);
     res.render("listings/index.ejs", { allListings });
 
 });
@@ -59,12 +59,13 @@ app.get("/listings/:id", async (req, res) => {
 });
 
 //create route
-app.post("/listings", async (req, res) => {
+app.post("/listings", wrapAsync(async (req, res, next) => {
+
     const newlisting = new Listing(req.body.listing);
     await newlisting.save();
-    console.log(newlisting);
+    // console.log(newlisting);
     res.redirect("/listings");
-});
+}));
 
 //edit route
 app.get("/listings/:id/edit", async (req, res) => {
@@ -85,7 +86,11 @@ app.delete("/listings/:id", async (req, res) => {
     await Listing.findByIdAndDelete(id);
     res.redirect("/listings");
 
-})
+});
+//error handling middleware
+app.use((err, req, res, next) => {
+    res.send("something went wrong");
+});
 app.listen(8080, () => {
     console.log("server is listening to port 8080");
 });
