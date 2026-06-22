@@ -8,6 +8,8 @@ const methodOverride = require("method-override");
 const ejsmate = require("ejs-mate");
 const wrapAsync = require("./utils/wrapAsync.js");
 const ExpressError=require("./utils/ExpressError.js");
+const {listingSchema}=require("./schema.js");
+
 app.use(express.json());
 app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -59,12 +61,13 @@ app.get("/listings/:id", wrapAsync( async (req, res) => {
 
 //create route
 app.post("/listings", wrapAsync(async (req, res, next) => {
-   if(!req.body.listing){
-        throw new ExpressError(400,"send a valid request");
+   let result= listingSchema.validate(req.body);
+    console.log(result);
+    if(result.error){
+        throw new ExpressError(400,result.error);
     }
     const newlisting = new Listing(req.body.listing);
     await newlisting.save();
-    // console.log(newlisting);
     res.redirect("/listings");
 }));
 
@@ -94,8 +97,7 @@ app.all(/.*/, (req, res, next) => {
 //error handling middleware
 app.use((err, req, res, next) => {
     let {statusCode=500,message="something went wrong"}=err;
-    // res.status(statusCode).send(message);
-    res.render("error.ejs",{err});
+    res.status(statusCode).render("error.ejs",{err});
 });
 app.listen(8080, () => {
     console.log("server is listening to port 8080");
