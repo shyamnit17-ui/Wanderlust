@@ -58,6 +58,7 @@ const validateReview=(req,res,next)=>{
        
         throw new ExpressError(400,errMsg);
     }
+    next();
 }
 
 app.get("/listings", wrapAsync(async (req, res) => {
@@ -73,7 +74,7 @@ app.get("/listings/new", ((req, res) => {
 //show route
 app.get("/listings/:id", wrapAsync( async (req, res) => {
     let { id } = req.params;
-    const listing = await Listing.findById(id);
+    const listing = await Listing.findById(id).populate("reviews");
     res.render("listings/show.ejs", { listing });
 }));
 
@@ -110,10 +111,16 @@ app.post("/listings/:id/reviews",validateReview, wrapAsync(async (req,res)=>{
   listing.reviews.push(newReview);
   await newReview.save();
   await listing.save();
-
   console.log(newReview);
   console.log("new review saved");
   res.redirect(`/listings/${listing._id}`);
+}));
+//delete review route
+app.delete("/listing/:id/reviews/:reviewId", wrapAsync(async (req,res)=>{
+    let {id,reviewId} =req.params;
+    await  Listing.findByIdAndUpdate(id,{$pull:{reviews:reviewId}});
+    await Review.findByIdAndDelete(reviewId);
+    res.redirect(`/listings/${id}`);
 }));
 app.all(/.*/, (req, res, next) => {
     next(new ExpressError(404, "page not found"));
